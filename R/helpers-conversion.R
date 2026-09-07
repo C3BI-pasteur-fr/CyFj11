@@ -447,27 +447,7 @@ identify_logical_gates <- function(populations, populationDefinitions) {
     !is.null(pop_def$definition$type) && pop_def$definition$type %in% c("and", "or", "not")
   }, logical(1)))
 
-  # First pass: identify logical gates that need gateDefinition added
-  for (i in logical_gate_indices) {
-    pop <- populations[[i]]
-    pop_def_uuid <- unlist(pop$parents$populationDefinitions)[1]
-    pop_def <- find_pop_def_by_uuid(pop_def_uuid)
-
-    if (is.null(pop_def$definition$gateDefinition)) {
-      combined <- find_combined_populations(pop)
-      if (!is.null(combined) && length(combined) > 0) {
-        combined_names <- sapply(combined, function(x) x$name)
-        populationDefinitions[[pop_def$uuid]]$definition$gateDefinition <- list(
-          type = "logical",
-          operator = pop_def$definition$type,
-          components = combined_names,
-          component_uuids = sapply(combined, function(x) x$population_uuid)
-        )
-      }
-    }
-  }
-
-  # Second pass: collect results
+  # Process logical gates and collect results
   results_list <- lapply(logical_gate_indices, function(i) {
     pop <- populations[[i]]
     pop_def_uuid <- unlist(pop$parents$populationDefinitions)[1]
@@ -484,6 +464,17 @@ identify_logical_gates <- function(populations, populationDefinitions) {
     if (!is.null(combined) && length(combined) > 0) {
       combined_names <- sapply(combined, function(x) x$name)
       if (.pkgenv$verbose) message(sprintf("  - Combines: %s", paste(combined_names, collapse = ", "))) # nocov
+
+      # Add gateDefinition if missing
+      if (is.null(pop_def$definition$gateDefinition)) {
+        if (.pkgenv$verbose) message(sprintf("  - Adding gateDefinition to populationDefinitions")) # nocov
+        populationDefinitions[[pop_def$uuid]]$definition$gateDefinition <<- list(
+          type = "logical",
+          operator = gate_type,
+          components = combined_names,
+          component_uuids = sapply(combined, function(x) x$population_uuid)
+        )
+      }
 
       list(
         population_uuid = pop$uuid,
