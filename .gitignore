@@ -47,3 +47,5 @@ flowjo_export_tests2
 CyFj11.Rcheck/
 *.Rcheck/
 *.tar.gz
+CyFj11.BiocCheck/
+output.txt

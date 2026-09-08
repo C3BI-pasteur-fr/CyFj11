@@ -120,7 +120,8 @@ extract_compensation_from_platforms <- function(spillover_matrices, dataSources 
 
       # Get compensated channel names from parameters (e.g., "Comp-FITC-A", not "FITC-A")
       # FlowJo 11 stores the compensated names in the parameters list
-      comp_names <- sapply(comp_spec$parameters, function(p) p$name)
+      comp_names <- vapply(comp_spec$parameters, function(p) p$name %||% NA_character_,
+                           character(1))
 
       # Create matrix
       comp_matrix <- as.matrix(coefficients)

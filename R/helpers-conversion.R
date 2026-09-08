@@ -69,13 +69,13 @@ filter_samples <- function(sample_uuids, subset, dataSources, keywords) {
     return(sample_uuids[subset_parsed])
   } else if (is.character(subset_parsed)) {
     # Filenames - match to sample UUIDs
-    matched <- sapply(subset_parsed, function(fname) {
-      idx <- which(sapply(dataSources, function(ds) {
-        basename(ds$definition$uri) == fname ||
-          ds$definition$customKeywords$`File Name` == fname
-      }))
-      if (length(idx) > 0) names(dataSources)[idx[1]] else NA
-    })
+    matched <- vapply(subset_parsed, function(fname) {
+      idx <- which(vapply(dataSources, function(ds) {
+        isTRUE(basename(ds$definition$uri) == fname) ||
+          isTRUE(ds$definition$customKeywords$`File Name` == fname)
+      }, logical(1)))
+      if (length(idx) > 0) names(dataSources)[idx[1]] else NA_character_
+    }, character(1))
     matched <- matched[!is.na(matched)]
     return(intersect(sample_uuids, matched))
   } else if (is.list(subset_parsed) && "name" %in% names(subset_parsed)) {
@@ -195,7 +195,7 @@ build_gating_tree <- function(sample_uuid, populations, populationDefinitions, r
     if (.pkgenv$verbose) message(sprintf("Found %d logical gates", length(logical_gates_info))) # nocov
     if (.pkgenv$verbose) { # nocov
       summary_df <- create_logical_gate_summary(logical_gates_info)
-      print(summary_df)
+      message(paste(capture.output(format(summary_df)), collapse = "\n"))
     }
   } else {
     if (.pkgenv$verbose) message("No logical gates found") # nocov
@@ -302,8 +302,8 @@ build_gating_tree <- function(sample_uuid, populations, populationDefinitions, r
       if (length(child_uuids) > 0) {
         # get order
         # here we need to use populationNumber if available.
-        pop_order = c()
-        idx=1
+        pop_order <- c()
+        idx <- 1
         for (child_pop_uuid in child_uuids) {
           child_pop <- populations[[child_pop_uuid]]
           if(is.null(child_pop$definition$populationNumber)){
@@ -311,7 +311,7 @@ build_gating_tree <- function(sample_uuid, populations, populationDefinitions, r
           } else {
             pop_order <- c(pop_order,child_pop$definition$populationNumber)
           }
-          idx = idx + 1
+          idx <- idx + 1
         }
         # browser() # nocov
         for (child_pop_uuid in child_uuids[order(pop_order)]) {
@@ -367,7 +367,8 @@ build_gating_tree <- function(sample_uuid, populations, populationDefinitions, r
     summary_after <- summarize_logical_gates(tree)
     if (!is.null(summary_after)) {
       if (.pkgenv$verbose) message("\nLogical gates in final tree:") # nocov
-      if (.pkgenv$verbose) print(summary_after) # nocov
+      if (.pkgenv$verbose) message(paste(capture.output(format(summary_after)),
+                                         collapse = "\n")) # nocov
     }
   }
   
@@ -447,8 +448,12 @@ identify_logical_gates <- function(populations, populationDefinitions) {
     !is.null(pop_def$definition$type) && pop_def$definition$type %in% c("and", "or", "not")
   }, logical(1)))
 
-  # Process logical gates and collect results
-  results_list <- lapply(logical_gate_indices, function(i) {
+  # Process logical gates and collect results.  Use an explicit loop so the
+  # gateDefinition mutation of populationDefinitions is visible here (a plain
+  # <- inside lapply would only bind in the closure, and BiocCheck discourages
+  # the <<- needed otherwise).
+  results_list <- list()
+  for (i in logical_gate_indices) {
     pop <- populations[[i]]
     pop_def_uuid <- unlist(pop$parents$populationDefinitions)[1]
     pop_def <- find_pop_def_by_uuid(pop_def_uuid)
@@ -462,37 +467,36 @@ identify_logical_gates <- function(populations, populationDefinitions) {
     combined <- find_combined_populations(pop)
 
     if (!is.null(combined) && length(combined) > 0) {
-      combined_names <- sapply(combined, function(x) x$name)
+      combined_names <- vapply(combined, function(x) unlist(x$name), character(1))
       if (.pkgenv$verbose) message(sprintf("  - Combines: %s", paste(combined_names, collapse = ", "))) # nocov
 
       # Add gateDefinition if missing
       if (is.null(pop_def$definition$gateDefinition)) {
         if (.pkgenv$verbose) message(sprintf("  - Adding gateDefinition to populationDefinitions")) # nocov
-        populationDefinitions[[pop_def$uuid]]$definition$gateDefinition <<- list(
+        populationDefinitions[[pop_def$uuid]]$definition$gateDefinition <- list(
           type = "logical",
           operator = gate_type,
           components = combined_names,
-          component_uuids = sapply(combined, function(x) x$population_uuid)
+          component_uuids = vapply(combined, function(x) unlist(x$population_uuid), character(1))
         )
       }
 
-      list(
+      results_list[[length(results_list) + 1]] <- list(
         population_uuid = pop$uuid,
         definition_uuid = pop_def$uuid,
         gate_name = gate_name,
         gate_type = gate_type,
         combined_populations = combined_names,
-        combined_population_uuids = sapply(combined, function(x) x$population_uuid),
-        combined_definition_uuids = sapply(combined, function(x) x$definition_uuid),
+        combined_population_uuids = vapply(combined, function(x) unlist(x$population_uuid), character(1)),
+        combined_definition_uuids = vapply(combined, function(x) unlist(x$definition_uuid), character(1)),
         num_components = length(combined)
       )
     } else {
-      message("  - Warning: No combined populations found!")
+      message("  - No combined populations found!")
       message(sprintf("  - parents$populations: %s",
                       paste(unlist(pop$parents$populations), collapse = ", ")))
-      NULL
     }
-  })
+  }
 
   # Remove NULL entries
   results <- results_list[!vapply(results_list, is.null, logical(1))]
@@ -578,16 +582,16 @@ create_logical_gate_summary <- function(logical_gates) {
   }
   
   df <- data.frame(
-    gate_name = sapply(logical_gates, function(x) x$gate_name),
-    gate_type = sapply(logical_gates, function(x) x$gate_type),
-    population_uuid = sapply(logical_gates, function(x) x$population_uuid),
-    num_components = sapply(logical_gates, function(x) x$num_components),
+    gate_name = vapply(logical_gates, function(x) unlist(x$gate_name), character(1)),
+    gate_type = vapply(logical_gates, function(x) unlist(x$gate_type), character(1)),
+    population_uuid = vapply(logical_gates, function(x) unlist(x$population_uuid), character(1)),
+    num_components = vapply(logical_gates, function(x) length(x$combined_populations), integer(1)),
     stringsAsFactors = FALSE
   )
-  
-  df$combined_populations <- sapply(logical_gates, function(x) {
-    paste(x$combined_populations, collapse = " | ")
-  })
+
+  df$combined_populations <- vapply(logical_gates, function(x) {
+    paste(unlist(x$combined_populations), collapse = " | ")
+  }, character(1))
   
   return(df)
 }
@@ -650,20 +654,20 @@ summarize_logical_gates <- function(tree) {
   
   if (length(gates) > 0) {
     df <- data.frame(
-      path = sapply(gates, function(g) g$path),
-      name = sapply(gates, function(g) g$name),
-      type = sapply(gates, function(g) g$type),
-      num_components = sapply(gates, function(g) g$num_components),
+      path = vapply(gates, function(g) paste(unlist(g$path), collapse = "/"), character(1)),
+      name = vapply(gates, function(g) paste(unlist(g$name), collapse = "/"), character(1)),
+      type = vapply(gates, function(g) unlist(g$type), character(1)),
+      num_components = vapply(gates, function(g) length(g$combined_populations), integer(1)),
       stringsAsFactors = FALSE
     )
-    
-    df$combined_populations <- sapply(gates, function(g) {
+
+    df$combined_populations <- vapply(gates, function(g) {
       if (!is.null(g$combined_populations) && length(g$combined_populations) > 0) {
-        paste(g$combined_populations, collapse = " | ")
+        paste(unlist(g$combined_populations), collapse = " | ")
       } else {
-        NA
+        NA_character_
       }
-    })
+    }, character(1))
     
     return(df)
   } else {
@@ -802,10 +806,10 @@ move_logical_gates_up <- function(tree) {
 
 
 
-get_uuids <- function(tree, uuids=c()){
-  uuids = c(uuids, tree$uuid)
+get_uuids <- function(tree, uuids = c()){
+  uuids <- c(uuids, tree$uuid)
   for (idx in seq_along(tree$children)){
-    uuids = get_uuids(tree$children[[idx]], uuids)
+    uuids <- get_uuids(tree$children[[idx]], uuids)
   }
   return(uuids)
 }
@@ -834,12 +838,12 @@ create_gatingset_from_cytoset <- function(cytoset,
   actual_sample_count <- length(cytoset)
   # browser() # nocov
   # Create individual GatingHierarchy objects with transformations
-  gsList = list()
+  gsList <- list()
   
   for (i in seq_len(min(length(sample_uuids), actual_sample_count))) {
     sample_uuid <- sample_uuids[i][[1]]
 
-    if (.pkgenv$verbose) cat("Processing sample", i, "of", actual_sample_count, "\n") # nocov
+    if (.pkgenv$verbose) message("Processing sample ", i, " of ", actual_sample_count) # nocov
 
     # Extract single cytoframe
     cf <- cytoset[[i]]
@@ -883,7 +887,7 @@ create_gatingset_from_cytoset <- function(cytoset,
       }
     }
     
-    cs = cytoset()
+    cs <- cytoset()
     cs_add_cytoframe(cs, identifier(cf), cf)
     # Create GatingSet from single sample
     gs_single <- GatingSet(cs)
@@ -932,9 +936,11 @@ create_gatingset_from_cytoset <- function(cytoset,
   }
   
   # Combine GatingHierarchy objects into a GatingSet
-  if (.pkgenv$verbose) cat("Combining", length(gsList), "GatingHierarchy objects into GatingSet...\n") # nocov
+  if (.pkgenv$verbose) {
+    message("Combining ", length(gsList), " GatingHierarchy objects into GatingSet...") # nocov
+  }
   # this will permanately transformt the data and loose transformation information
-  gs = merge_list_to_gs(gsList)
+  gs <- merge_list_to_gs(gsList)
   
   
   
@@ -945,7 +951,7 @@ create_gatingset_from_cytoset <- function(cytoset,
     additional.keys,
     additional.sampleID
   )
-  names(gsList) = sample_names
+  names(gsList) <- sample_names
   # tryCatch({
   #   flowWorkspace::sampleNames(gs) <- sample_names
   # }, error = function(e) {
@@ -996,7 +1002,7 @@ create_gatingset_from_cytoset <- function(cytoset,
 #' Create Sample Names
 #' @keywords internal
 create_sample_names <- function(sample_uuids, dataSources, additional.keys, additional.sampleID) {
-  sapply(sample_uuids, function(uuid) {
+  vapply(sample_uuids, function(uuid) {
     ds <- dataSources[[uuid]]
     
     # Start with filename
@@ -1018,7 +1024,7 @@ create_sample_names <- function(sample_uuids, dataSources, additional.keys, addi
     }
     
     paste(name_parts, collapse = "_")
-  })
+  }, character(1))
 }
 
 

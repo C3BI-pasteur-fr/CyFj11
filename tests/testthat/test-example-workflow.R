@@ -51,7 +51,13 @@ test_that("Example workflow runs without errors", {
   expect_true("populationDefinitions" %in% names(ws))
   expect_true("populations" %in% names(ws))
   
-  # Test pretty printing (should not error)
+  # Test pretty printing (should not error); run in a temp working dir so
+  # the output file does not pollute the package tree
+  old_wd <- getwd()
+  tmp_out <- tempfile("pretty_print_out_")
+  dir.create(tmp_out)
+  setwd(tmp_out)
+  on.exit(setwd(old_wd), add = TRUE)
   expect_error(pretty_print_flowjo(workspace_path), NA)
   
   # Note: We're not testing the full conversion workflow here because

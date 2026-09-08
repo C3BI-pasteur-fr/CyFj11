@@ -124,7 +124,7 @@ extract_flowjo_stats <- function(wsp_files,
 
   if (value_as_numeric) {
     long_table <- long_table %>%
-      mutate(value_num = suppressWarnings(as.numeric(value_raw)))
+      mutate(value_num = as_num_quiet(value_raw))
   }
 
   # Normalize empty ancestors to NA for matching
@@ -220,10 +220,10 @@ extract_flowjo_stats <- function(wsp_files,
       "This usually means the CSV was generated without all wsp_files.\n",
       "Affected file(s): ", paste(affected_files, collapse = ", "), "\n\n",
       "Missing by file:\n",
-      paste(capture.output(print(as.data.frame(summary_by_file))),
+      paste(capture.output(format(as.data.frame(summary_by_file))),
             collapse = "\n"),
       "\n\nMissing signatures:\n",
-      paste(capture.output(print(as.data.frame(missing_in_csv))),
+      paste(capture.output(format(as.data.frame(missing_in_csv))),
             collapse = "\n"),
       call. = FALSE
     )
@@ -236,7 +236,7 @@ extract_flowjo_stats <- function(wsp_files,
   if (nrow(extra_in_csv) > 0) {
     warning("csv_file contains mappings not present in the workspaces ",
             "(these will be ignored):\n",
-            paste(capture.output(print(as.data.frame(extra_in_csv))),
+            paste(capture.output(format(as.data.frame(extra_in_csv))),
                   collapse = "\n"))
   }
 
@@ -246,7 +246,7 @@ extract_flowjo_stats <- function(wsp_files,
 
   if (nrow(missing_names) > 0) {
     stop("The following rows in csv_file have empty better_name values:\n",
-         paste(capture.output(print(as.data.frame(missing_names))),
+         paste(capture.output(format(as.data.frame(missing_names))),
                collapse = "\n"))
   }
 
@@ -399,7 +399,7 @@ extract_wsp_data_long <- function(file) {
   bind_rows(lapply(samples, function(sample) {
     sample_name  <- xml_attr(sample, "name")
     sample_id    <- xml_attr(sample, "sampleID")
-    sample_count <- suppressWarnings(as.numeric(xml_attr(sample, "count")))
+    sample_count <- as_num_quiet(xml_attr(sample, "count"))
 
     # ---- Population-level counts (the count attribute) ----
     populations <- xml_find_all(sample, ".//Population")

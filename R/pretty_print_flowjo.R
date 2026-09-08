@@ -51,7 +51,6 @@ pretty_print_flowjo <- function(flowjo_file) {
   
   # Find the analysis JSON file
   json_files <- list.files(file.path(temp_dir, "analyses"), pattern = "\\.json$", recursive = TRUE, full.names = TRUE)
-  # browser()
   if (length(json_files) == 0) {
     stop("No JSON files found in the FlowJo workspace")
   }
@@ -61,7 +60,7 @@ pretty_print_flowjo <- function(flowjo_file) {
   
   json_data <- jsonlite::read_json(json_file, simplifyVector = FALSE)
   
-  # Create output file name
+  # Create output file name next to the source file
   base_name <- sub("\\.flowjo$", "", basename(flowjo_file))
   output_file <- paste0(base_name, "_pretty.json")
   

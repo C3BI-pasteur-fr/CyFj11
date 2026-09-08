@@ -264,7 +264,7 @@ adjust_gate_transformations <- function(gh, gate_obj, strip_comp_prefix = TRUE) 
   } # nocov end
 
   # If no mapping found at all, return original gate
-  if (all(sapply(mapped_params, is.null))) {
+  if (length(mapped_params) == 0 || all(vapply(mapped_params, is.null, logical(1)))) {
     return(gate_obj)
   }
 
@@ -323,7 +323,7 @@ map_gate_params_to_gh <- function(gate_params, gh_param_names, strip_comp_prefix
 update_gate_param_names <- function(gate_obj, mapped_params) {
   
   # Filter out NULL mappings
-  valid_mapping <- mapped_params[!sapply(mapped_params, is.null)]
+  valid_mapping <- mapped_params[!vapply(mapped_params, is.null, logical(1))]
   
   if (length(valid_mapping) == 0) {
     return(gate_obj)
@@ -333,18 +333,18 @@ update_gate_param_names <- function(gate_obj, mapped_params) {
   if (inherits(gate_obj, "rectangleGate")) {
     # Update min/max names
     old_names <- names(gate_obj@min)
-    new_names <- sapply(old_names, function(n) {
+    new_names <- vapply(old_names, function(n) {
       if (n %in% names(valid_mapping)) valid_mapping[[n]] else n
-    })
+    }, character(1))
     names(gate_obj@min) <- new_names
     names(gate_obj@max) <- new_names
     
   } else if (inherits(gate_obj, "quadGate")) {
     # Update boundary names - critical for quadGate!
     old_names <- names(gate_obj@boundary)
-    new_names <- sapply(old_names, function(n) {
+    new_names <- vapply(old_names, function(n) {
       if (n %in% names(valid_mapping)) valid_mapping[[n]] else n
-    })
+    }, character(1))
     names(gate_obj@boundary) <- new_names
     
     if (.pkgenv$verbose) {
@@ -355,17 +355,17 @@ update_gate_param_names <- function(gate_obj, mapped_params) {
   } else if (inherits(gate_obj, "polygonGate")) {
     # Update boundary column names
     old_names <- colnames(gate_obj@boundaries)
-    new_names <- sapply(old_names, function(n) {
+    new_names <- vapply(old_names, function(n) {
       if (n %in% names(valid_mapping)) valid_mapping[[n]] else n
-    })
+    }, character(1))
     colnames(gate_obj@boundaries) <- new_names
     
   } else if (inherits(gate_obj, "ellipsoidGate")) {
     # Update mean and covariance names
     old_names <- names(gate_obj@mean)
-    new_names <- sapply(old_names, function(n) {
+    new_names <- vapply(old_names, function(n) {
       if (n %in% names(valid_mapping)) valid_mapping[[n]] else n
-    })
+    }, character(1))
     names(gate_obj@mean) <- new_names
     colnames(gate_obj@cov) <- new_names
     rownames(gate_obj@cov) <- new_names
@@ -719,26 +719,26 @@ add_population_node <- function(gh, node, gates, sample_uuid, parent = "root",
     if (.pkgenv$verbose) message("  Available paths: ", paste(all_paths, collapse = ", "))
     
     # For each component, find its path in the hierarchy
-    component_refs <- sapply(component_names, function(comp_name) {
+    component_refs <- vapply(component_names, function(comp_name) {
       # Search for exact match in population names
       matching_paths <- grep(paste0("/", comp_name, "$"), all_paths, value = TRUE)
-      
+
       if (length(matching_paths) == 0) {
         if (is.null(deferred)) {
           warning("Could not find population '", comp_name, "' for logical gate '", node_name, "'\n",
                   "  Available populations: ", paste(all_paths, collapse = ", "))
         }
-        return(NULL)
+        return(NA_character_)
       }
-      
+
       # Use the first matching path
       path <- matching_paths[1]
       if (.pkgenv$verbose) message("    Found: ", comp_name, " -> ", path)
       return(path)
-    })
-    
-    # Remove NULLs
-    component_refs <- component_refs[!sapply(component_refs, is.null)]
+    }, character(1))
+
+    # Remove unresolved components
+    component_refs <- component_refs[!is.na(component_refs)]
     
     if (length(component_refs) < length(component_names)) {
       if (!is.null(deferred)) {
@@ -832,9 +832,9 @@ add_population_node <- function(gh, node, gates, sample_uuid, parent = "root",
         # name for quadrant should be of length 4
         if (.pkgenv$verbose) message("parent: ", parent, " ", node_name[1], "\n")
         # browser() # nocov
-        # this seems to be working for the current case but should 
+        # this seems to be working for the current case but should
         if(inherits(gate_obj, "quadGate")){
-          node_name = node_name[c(3,4,2,1)]
+          node_name <- node_name[c(3,4,2,1)]
         }
         # quad gate is tried to be added multiple times.
         # Get flowFrame parameter names from the GatingHierarchy
@@ -856,7 +856,7 @@ add_population_node <- function(gh, node, gates, sample_uuid, parent = "root",
         
         if (!verification$valid && .pkgenv$verbose) {
           for (warn in verification$warnings) {
-            message("  WARNING: ", warn)
+            message("  Note: ", warn)
           }
         }
         

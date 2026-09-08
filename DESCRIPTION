@@ -34,7 +34,7 @@ Description: Provides functions to parse FlowJo v11 workspace files
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:
-    R (>= 4.5.0)
+    R (>= 4.6.0)
 Imports:
     jsonlite,
     dplyr,
