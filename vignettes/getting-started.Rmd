@@ -8,7 +8,7 @@ vignette: >
   %\VignettePackage{CyFj11}
 ---
 
-```{r, include = FALSE}
+```{r setup-opts, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -154,7 +154,7 @@ plot(gs)
 autoplot(gs, "cells", bins = 80)
 autoplot(gs, "cd8Pos", bins = 80, axis_inverse_trans = TRUE)
 
-gate = gh_pop_get_gate(gs, "cd8Pos")
+gate <- gh_pop_get_gate(gs, "cd8Pos")
 gh = gs[[1]][[1]]
 gh_get_transformations(gh,channel = "APC-A")
 
@@ -192,7 +192,7 @@ For function-specific documentation, use the help system:
 ?export_flowjo10_workspace
 ```
 
-```{r cytoML read xml, eval=FALSE}
+```{r cytoml-read-xml, eval=FALSE}
 library(CytoML)
 ws <- CytoML::open_flowjo_xml(export_path)
 gs_back <- CytoML::flowjo_to_gatingset(ws, name = "All Samples",

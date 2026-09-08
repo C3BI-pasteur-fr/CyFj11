@@ -641,7 +641,7 @@ convert_boolean_gate <- function(gate, pop_name) {
     parse_boolean_expression(specification),
     error = function(e) {
       warning("Failed to parse boolean expression '", specification,
-              "' for gate: ", pop_name, ". Error: ", e$message)
+              "' for gate: ", pop_name, ": ", e$message)
       return(NULL)
     }
   )
@@ -657,7 +657,7 @@ convert_boolean_gate <- function(gate, pop_name) {
     ),
     error = function(e) {
       warning("Failed to create boolean filter for: ", pop_name,
-              ". Error: ", e$message)
+              ": ", e$message)
       return(NULL)
     }
   )

@@ -56,8 +56,8 @@ process_zip_archive <- function(zip_path) {
   unzip(zip_path, exdir = work_dir)
   zip_info <- list.files(work_dir, recursive = TRUE, full.names = TRUE)
   if (.pkgenv$verbose) { # nocov
-    message("Archive contains", length(zip_info), "files:\n")
-  print(zip_info)
+    message("Archive contains ", length(zip_info), " files:")
+    if (length(zip_info)) message(paste(zip_info, collapse = "\n"))
   }
   # Find target files (manifest and JSON)
   manifest_files <- grep("manifest\\.txt$", zip_info, value = TRUE)
@@ -68,8 +68,8 @@ process_zip_archive <- function(zip_path) {
   message("Found", length(json_files), "JSON file(s)\n")
   }
   # Initialize results structure
-  results = list(
-    manifests = list(),  
+  results <- list(
+    manifests = list(),
     json = list()
   )
   

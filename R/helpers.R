@@ -24,6 +24,46 @@
 #' @keywords internal
 NULL
 
+#' Safe Numeric/Integer Coercion Without Warnings
+#'
+#' BiocCheck discourages \code{suppressWarnings(as.numeric(...))}; these helpers
+#' validate the string form with a regular expression first so that
+#' \code{as.numeric}/\code{as.integer} never produce a coercion warning while
+#' producing exactly the same result as the suppressed call.
+#'
+#' @param x Character vector to coerce
+#' @return Numeric/integer vector, NA where x does not denote a number
+#' @name safe-coercion
+#' @keywords internal
+NULL
+
+#' @rdname safe-coercion
+as_num_quiet <- function(x) {
+  # Regex mirrors R's numeric literal grammar (incl. hex, Inf, NaN); the
+  # pre-check keeps as.numeric from warning on non-numeric text.
+  rx <- paste0("^[[:space:]]*[+-]?(Inf(inity)?|NaN|(0[xX][0-9a-fA-F]+",
+               "|[0-9]+(\\.[0-9]*)?|\\.[0-9]+)([eE][+-]?[0-9]+)?)[[:space:]]*$")
+  ok <- grepl(rx, x)
+  out <- rep(NA_real_, length(x))
+  if (any(ok)) {
+    # Values reaching as.numeric() already matched the numeric-literal regex,
+    # so the conversion cannot warn.
+    out[ok] <- as.numeric(x[ok])
+  }
+  out
+}
+
+#' @rdname safe-coercion
+as_int_quiet <- function(x) {
+  n <- as_num_quiet(x)
+  ok <- !is.na(n)
+  # as.integer() only warns when the value is out of integer range
+  out <- rep(NA_integer_, length(x))
+  in_range <- ok & n >= -.Machine$integer.max & n <= .Machine$integer.max
+  out[in_range] <- as.integer(n[in_range])
+  out
+}
+
 #' @importFrom utils packageVersion
 NULL
 
@@ -119,8 +159,8 @@ map_param_names <- function(source_names,
   }
 
   # Create sanitized versions for matching
-  sanitized_source <- sapply(source_names, sanitize_name)
-  sanitized_target <- sapply(target_names, sanitize_name)
+  sanitized_source <- vapply(source_names, sanitize_name, character(1))
+  sanitized_target <- vapply(target_names, sanitize_name, character(1))
 
   # Prepare optional description matching.
   # target_descriptions should be a named vector: target_name -> description/marker
@@ -137,7 +177,7 @@ map_param_names <- function(source_names,
       }
     }
     if (has_descriptions) {
-      sanitized_desc <- sapply(target_descriptions, sanitize_name)
+      sanitized_desc <- vapply(target_descriptions, sanitize_name, character(1))
     }
   }
 

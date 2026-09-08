@@ -230,7 +230,10 @@ fj11_to_gatingset <- function(fj11_workspace,
       multiple_rows <- path_resolution$status == "MULTIPLE"
       if (any(multiple_rows)) {
         # Split the resolved_path by " | " and take the first path
-        first_paths <- sapply(strsplit(path_resolution$resolved_path[multiple_rows], " \\| "), `[`, 1)
+        first_paths <- vapply(
+          strsplit(path_resolution$resolved_path[multiple_rows], " \\| "),
+          function(p) p[1], character(1)
+        )
         names(first_paths) <- path_resolution$sample_id[multiple_rows]
         sample_file_map <- c(sample_file_map, first_paths)
       }

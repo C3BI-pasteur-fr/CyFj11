@@ -47,8 +47,15 @@ test_that("pretty_print_flowjo works with example data", {
   # Read the FlowJo v11 workspace
   ws <- read_flowjo11_workspace(workspace_path)
   
-  # Test pretty printing (should not error)
+  # Test pretty printing (should not error); run in a temp working dir so
+  # the output file does not pollute the package tree
+  old_wd <- getwd()
+  tmp_out <- tempfile("pretty_print_out_")
+  dir.create(tmp_out)
+  setwd(tmp_out)
+  on.exit(setwd(old_wd), add = TRUE)
   expect_error(pretty_print_flowjo(workspace_path), NA)
+  expect_true(file.exists(file.path(tmp_out, "test.data_pretty.json")))
   
   # Examine the workspace structure
   expect_true(is.list(ws))

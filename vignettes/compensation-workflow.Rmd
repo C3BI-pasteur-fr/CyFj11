@@ -8,7 +8,7 @@ vignette: >
   %\VignettePackage{CyFj11}
 ---
 
-```{r, include = FALSE}
+```{r setup-opts, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -200,3 +200,7 @@ ggcyto::autoplot(gs, pops[2], bins = 128)
 * `?export_flowjo10_workspace` for details on exporting a `GatingSet` to FlowJo
   v10 format.
 * `?fj11_to_gatingset` for importing FlowJo v11 workspaces.
+
+```{r sessioninfo}
+sessionInfo()
+```

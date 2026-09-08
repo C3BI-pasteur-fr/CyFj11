@@ -151,7 +151,7 @@ parse_transformation_info <- function(trans_info) {
   
   # If the transformation type is still not recognized, replace with biexponential
   if (!(normalized_type %in% c("biexponential", "logicle", "arcsinh", "log", "linear"))) {
-    warning(paste0("Unknown transformation type '", trans_type, "' replaced with biexponential"))
+    warning("Unknown transformation type '", trans_type, "' replaced with biexponential")
     normalized_type <- "biexponential"
   }
   
@@ -172,10 +172,10 @@ parse_transformation_info <- function(trans_info) {
          # },
          "biexponential" = {
            # Biex transformation parameters - map to logicle or appropriate transform
-           params$t = trans_info[["t"]] %||% trans_info[["T"]] %||% 262144
-           params$a = trans_info[["a"]] %||% trans_info[["A"]] %||% 0
-           params$m = trans_info[["m"]] %||% trans_info[["M"]] %||% 3.55
-           params$w = trans_info[["w"]] %||% trans_info[["W"]] %||% -25.11886
+           params$t <- trans_info[["t"]] %||% trans_info[["T"]] %||% 262144
+           params$a <- trans_info[["a"]] %||% trans_info[["A"]] %||% 0
+           params$m <- trans_info[["m"]] %||% trans_info[["M"]] %||% 3.55
+           params$w <- trans_info[["w"]] %||% trans_info[["W"]] %||% -25.11886
          },
          # "arcsinh" = {
          #   browser() # nocov
@@ -194,8 +194,8 @@ parse_transformation_info <- function(trans_info) {
            params$vectorLength  <- trans_info[["vectorLength"]]  %||% 256
          },
          "linear" = {
-           params$a = trans_info[["a"]] %||% trans_info[["A"]] %||% trans_info[["maxRange"]] %||% 1
-           params$b = trans_info[["b"]] %||% trans_info[["B"]] %||% trans_info[["minRange"]] %||% 0
+           params$a <- trans_info[["a"]] %||% trans_info[["A"]] %||% trans_info[["maxRange"]] %||% 1
+           params$b <- trans_info[["b"]] %||% trans_info[["B"]] %||% trans_info[["minRange"]] %||% 0
          }
   )
   
@@ -450,7 +450,7 @@ create_linear_transform <- function(spec) {
   # }
   
   #TODO carry over gateResolution from definition$GateDefinition
-  gateResolution =  256 
+  gateResolution <- 256
   # Extract valid parameters with defaults
   a <- spec[["a"]] %||% 1
   b <- spec[["b"]] %||% 0
@@ -469,13 +469,13 @@ create_linear_transform <- function(spec) {
   #   # browser() # nocov
   #   stop("Parameter 'a' cannot be zero (would cause division by zero in inverse)")
   # }
-  # it seems that in FlowJo 10 there is no transformation being done, just 
+  # it seems that in FlowJo 10 there is no transformation being done, just
   # for visualization min/maxRange are being used.
-  a = 1
-  b = 0
+  a <- 1
+  b <- 0
   # Create the linear transformation: y = b + a*x
   # Inverse: x = (y - a)/b
-  trans_obj = scales::trans_new(
+  trans_obj <- scales::trans_new(
     name = paste0("linear_", channel),
     transform = function(x) b + a * x,
     inverse = function(y) (y - b) / a,

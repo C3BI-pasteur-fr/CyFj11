@@ -9,89 +9,75 @@ export(pretty_print_flowjo)
 export(read_flowjo11_workspace)
 export(set_sanitize_slashes)
 export(set_verbose)
-importFrom(dplyr,
-  anti_join,
-  arrange,
-  bind_rows,
-  case_when,
-  coalesce,
-  count,
-  desc,
-  distinct,
-  enquo,
-  filter,
-  group_by,
-  if_else,
-  left_join,
-  mutate,
-  n,
-  select,
-  summarise,
-  ungroup
-)
-importFrom(flowCore,
-  arcsinhTransform,
-  compensate,
-  compensation,
-  ellipsoidGate,
-  identifier,
-  linearTransform,
-  logTransform,
-  logicleTransform,
-  parameters,
-  polygonGate,
-  quadGate,
-  rectangleGate
-)
-importFrom(flowWorkspace,
-  GatingSet,
-  booleanFilter,
-  cs_add_cytoframe,
-  cytoset,
-  flowjo_biexp_trans,
-  gh_get_pop_paths,
-  gh_get_transformations,
-  gh_pop_get_children,
-  gh_pop_get_count,
-  gh_pop_get_data,
-  gh_pop_get_gate,
-  gh_pop_get_parent,
-  gs_get_pop_paths,
-  gs_pop_add,
-  gs_pop_get_gate,
-  load_cytoset_from_fcs,
-  markernames,
-  merge_list_to_gs,
-  recompute,
-  sampleNames,
-  transformerList
-)
+importFrom(dplyr,anti_join)
+importFrom(dplyr,arrange)
+importFrom(dplyr,bind_rows)
+importFrom(dplyr,case_when)
+importFrom(dplyr,coalesce)
+importFrom(dplyr,count)
+importFrom(dplyr,desc)
+importFrom(dplyr,distinct)
+importFrom(dplyr,enquo)
+importFrom(dplyr,filter)
+importFrom(dplyr,group_by)
+importFrom(dplyr,if_else)
+importFrom(dplyr,left_join)
+importFrom(dplyr,mutate)
+importFrom(dplyr,n)
+importFrom(dplyr,select)
+importFrom(dplyr,summarise)
+importFrom(dplyr,ungroup)
+importFrom(flowCore,arcsinhTransform)
+importFrom(flowCore,compensate)
+importFrom(flowCore,compensation)
+importFrom(flowCore,ellipsoidGate)
+importFrom(flowCore,identifier)
+importFrom(flowCore,linearTransform)
+importFrom(flowCore,logTransform)
+importFrom(flowCore,logicleTransform)
+importFrom(flowCore,parameters)
+importFrom(flowCore,polygonGate)
+importFrom(flowCore,quadGate)
+importFrom(flowCore,rectangleGate)
+importFrom(flowWorkspace,GatingSet)
+importFrom(flowWorkspace,booleanFilter)
+importFrom(flowWorkspace,cs_add_cytoframe)
+importFrom(flowWorkspace,cytoset)
+importFrom(flowWorkspace,flowjo_biexp_trans)
+importFrom(flowWorkspace,gh_get_pop_paths)
+importFrom(flowWorkspace,gh_get_transformations)
+importFrom(flowWorkspace,gh_pop_get_children)
+importFrom(flowWorkspace,gh_pop_get_count)
+importFrom(flowWorkspace,gh_pop_get_data)
+importFrom(flowWorkspace,gh_pop_get_gate)
+importFrom(flowWorkspace,gh_pop_get_parent)
+importFrom(flowWorkspace,gs_get_pop_paths)
+importFrom(flowWorkspace,gs_pop_add)
+importFrom(flowWorkspace,gs_pop_get_gate)
+importFrom(flowWorkspace,load_cytoset_from_fcs)
+importFrom(flowWorkspace,markernames)
+importFrom(flowWorkspace,merge_list_to_gs)
+importFrom(flowWorkspace,recompute)
+importFrom(flowWorkspace,sampleNames)
+importFrom(flowWorkspace,transformerList)
 importFrom(magrittr,"%>%")
 importFrom(methods,is)
-importFrom(readr,
-  read_csv,
-  write_csv
-)
+importFrom(readr,read_csv)
+importFrom(readr,write_csv)
 importFrom(rlang,"%||%")
-importFrom(stats,
-  runif,
-  setNames
-)
+importFrom(stats,runif)
+importFrom(stats,setNames)
 importFrom(tibble,tibble)
 importFrom(tidyr,pivot_wider)
-importFrom(utils,
-  capture.output,
-  menu,
-  packageVersion,
-  unzip
-)
-importFrom(xml2,
-  read_xml,
-  xml_attr,
-  xml_attrs,
-  xml_find_all,
-  xml_name,
-  xml_ns_strip,
-  xml_parent,
-  xml_type
-)
+importFrom(utils,capture.output)
+importFrom(utils,menu)
+importFrom(utils,packageVersion)
+importFrom(utils,unzip)
+importFrom(xml2,read_xml)
+importFrom(xml2,xml_attr)
+importFrom(xml2,xml_attrs)
+importFrom(xml2,xml_find_all)
+importFrom(xml2,xml_name)
+importFrom(xml2,xml_ns_strip)
+importFrom(xml2,xml_parent)
+importFrom(xml2,xml_type)

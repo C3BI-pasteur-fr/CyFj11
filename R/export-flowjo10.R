@@ -26,7 +26,9 @@ NULL
 
 #' Export GatingSet to FlowJo v10 Workspace
 #'
-#' @param gating_set GatingSet object to export
+#' @param gating_set A GatingSet object to export. A named list of GatingSets,
+#'        as returned by \code{\link{fj11_to_gatingset}}, is also accepted and
+#'        merged with \code{flowWorkspace::merge_list_to_gs()} before export.
 #' @param output_path Path where the .xml file should be created
 #' @param workspace_name Optional name for the workspace
 #' @param fcs_root Optional base directory for FCS files.
@@ -39,14 +41,14 @@ NULL
 #' @return Logical indicating success
 #' @export
 #' @examples
-#' \dontrun{
 #' # Export a GatingSet to FlowJo v10 XML format
 #' ws_path  <- system.file("extdata", "min_test.flowjo", package = "CyFj11")
 #' fcs_path <- system.file("extdata", package = "CyFj11")
 #' ws <- read_flowjo11_workspace(ws_path)
 #' gs <- fj11_to_gatingset(ws, group_name = 1, path = fcs_path)
-#' export_flowjo10_workspace(gs, "exported_workspace.xml")
-#' }
+#' out_file <- tempfile(fileext = ".xml")
+#' export_flowjo10_workspace(gs, out_file)
+#' file.exists(out_file)
 export_flowjo10_workspace <- function(gating_set, output_path,
                                       workspace_name = NULL,
                                       fcs_root       = NULL,
@@ -61,7 +63,22 @@ export_flowjo10_workspace <- function(gating_set, output_path,
   if (!requireNamespace("flowWorkspace", quietly = TRUE)) {
     stop("flowWorkspace package required for GatingSet operations")
   }
-  
+
+  # ---- Accept a single GatingSet or a list of them -------------------------
+  # fj11_to_gatingset() returns a named list of GatingSets (one per sample);
+  # merge them so the export path always sees one GatingSet.
+  if (is.list(gating_set) && !methods::is(gating_set, "GatingSet")) {
+    if (length(gating_set) == 0 || !all(vapply(gating_set, methods::is, logical(1), class2 = "GatingSet"))) {
+      stop("gating_set must be a GatingSet or a list of GatingSets")
+    }
+    if (length(gating_set) > 1) {
+      warning("gating_set is a list of ", length(gating_set),
+              " GatingSets; merging with flowWorkspace::merge_list_to_gs() ",
+              "(per-sample transformations may be discarded)")
+    }
+    gating_set <- flowWorkspace::merge_list_to_gs(gating_set)
+  }
+
   # ---- Determine the directory for FCS path calculations ------------------
   target_fcs_dir <- if (!is.null(fcs_root)) {
     outDir <- fcs_root
@@ -253,10 +270,10 @@ parse_spill_keyword <- function(keywords) {
   # FCS SPILL keyword is a flat vector: first value is the number of
   # parameters, followed by the parameter names, then the column-major matrix
   # values.
-  vals <- suppressWarnings(as.numeric(spill))
+  vals <- as_num_quiet(as.character(spill))
   tokens <- as.character(spill)
-  
-  n <- suppressWarnings(as.integer(vals[1]))
+
+  n <- as_int_quiet(vals[1])
   if (is.na(n) || n <= 0) return(NULL)
   
   needed_total <- 1 + n + n * n
@@ -306,7 +323,7 @@ build_sample_keywords <- function(fcs_keywords, gs_keywords, final_filename) {
     comp_names <- colnames(spill)
     n_orig <- length(comp_names)
     # Determine existing $PAR
-    par_val <- suppressWarnings(as.integer(keywords[["$PAR"]]))
+    par_val <- as_int_quiet(keywords[["$PAR"]])
     if (length(par_val) == 0L || is.na(par_val)) par_val <- n_orig
 
     # Add $P{par_val + i}N/S/R entries for each compensated channel.
@@ -348,7 +365,7 @@ build_sample_keywords <- function(fcs_keywords, gs_keywords, final_filename) {
       # from the channel names so it matches the original FCS parameters.
       if (length(sp) == 1) {
         parts <- strsplit(sp, ",")[[1]]
-        n <- suppressWarnings(as.integer(parts[1]))
+        n <- as_int_quiet(parts[1])
         if (!is.na(n) && length(parts) >= 1 + n) {
           parts[2:(n + 1)] <- sub("^Comp-", "", parts[2:(n + 1)])
           sp <- paste(parts, collapse = ",")
@@ -567,7 +584,7 @@ extract_populations_from_gatingset_v10 <- function(gating_set, samples_data, gat
     for (pop_path in pop_paths) {
       # Get parent population path
       # cat(file = stderr(), pop_path,"\n")
-      parent_path = "root"
+      parent_path <- "root"
       if(pop_path != "root"){
         parent_path <- trimws(flowWorkspace::gs_pop_get_parent(gh, pop_path, path = "auto"))
       }
@@ -611,7 +628,7 @@ create_default_groups_v10 <- function(samples) {
   groups <- list()
   
   # Get all sample IDs
-  sample_ids <- sapply(samples, function(s) s$id)
+  sample_ids <- vapply(samples, function(s) s$id, numeric(1))
   
   groups[["all_samples"]] <- list(
     name = "All Samples",
@@ -1551,7 +1568,7 @@ generate_flowjo10_xml <- function(gating_set, samples, gates, populations, group
               kw <- flowCore::keyword(fr)
               n_pattern <- "^\\$P[0-9]+N$"
               n_keys <- grep(n_pattern, names(kw), value = TRUE)
-              n_values <- sapply(n_keys, function(k) as.character(kw[[k]]))
+              n_values <- vapply(n_keys, function(k) as.character(kw[[k]]), character(1))
               param_match <- which(n_values == channel)
               if (length(param_match) > 0) {
                 param_num <- gsub("\\$|P|N", "", names(param_match)[1])
@@ -1763,7 +1780,7 @@ generate_flowjo10_xml <- function(gating_set, samples, gates, populations, group
         kw <- flowCore::keyword(fr)
         n_pattern <- "^\\$P[0-9]+N$"
         n_keys <- grep(n_pattern, names(kw), value = TRUE)
-        n_values <- sapply(n_keys, function(k) as.character(kw[[k]]))
+        n_values <- vapply(n_keys, function(k) as.character(kw[[k]]), character(1))
         param_match <- which(n_values == channel)
         if (length(param_match) > 0) {
           param_num <- gsub("\\$|P|N", "", names(param_match)[1])
@@ -1806,7 +1823,7 @@ generate_flowjo10_xml <- function(gating_set, samples, gates, populations, group
       })
     }
     # save(file = "generate_flowjo10_xml.debug.RData", list = ls())
-    gate_dims = tryCatch({
+    gate_dims <- tryCatch({
       parameters(gh_pop_get_gate(sample_gh, gh_get_pop_paths(sample_gh)[2]))
     }, error = function(e) {
       NULL
@@ -2420,13 +2437,13 @@ generate_group_subpopulations_xml <- function(populations, gates, parent_path = 
       
       # Prevent a population from being its own parent (cycle detection)
       if (population$name == parent_path) {
-        message("WARNING: Population '", population$name, 
-            "' cannot be its own parent. Skipping recursion.\n")
+        warning("Population '", population$name,
+            "' cannot be its own parent. Skipping recursion.")
       } else {
         # Check if we've already visited this population
         if (population$name %in% visited_paths) {
-          message("WARNING: Cycle detected - population '", 
-              population$name, "' already visited. Skipping recursion.\n")
+          warning("Cycle detected - population '",
+              population$name, "' already visited. Skipping recursion.")
         } else {
           new_visited_paths <- unique(c(visited_paths, population$name))
           subpop_xml <- generate_group_subpopulations_xml(
@@ -2507,7 +2524,7 @@ get_display_range <- function(gh, param_name) {
     # Find parameter number by matching $PnN to param_name
     n_pattern <- paste0("^\\$P[0-9]+N$")
     n_keys <- grep(n_pattern, names(kw), value = TRUE)
-    n_values <- sapply(n_keys, function(k) as.character(kw[[k]]))
+    n_values <- vapply(n_keys, function(k) as.character(kw[[k]]), character(1))
     param_match <- which(n_values == param_name)
     
     if (length(param_match) > 0) {

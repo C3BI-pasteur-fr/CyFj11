@@ -52,3 +52,6 @@ vignettes/compensation-workflow.html
 vignettes/compensation-workflow.Rmd
 ^\.claude$
 hoos.txt
+^CyFj11\.BiocCheck$
+^CyFj11\.Rcheck$
+output.txt
