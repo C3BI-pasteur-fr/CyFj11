@@ -5,10 +5,11 @@
 \title{Extract Compensation Matrices from FlowJo v11 Workspace}
 \usage{
 extract_compensation(
-    dataSources,
-    sample_uuids,
-    custom_compensation = NULL,
-    platforms = NULL
+  dataSources,
+  sample_uuids,
+  custom_compensation = NULL,
+  platforms = NULL,
+  schema_version = NULL
 )
 }
 \arguments{

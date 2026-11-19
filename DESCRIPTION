@@ -1,7 +1,7 @@
 Package: CyFj11
 Type: Package
 Title: Parse FlowJo V11 Workspace Files and Export to FlowJo V10
-Version: 0.99.113
+Version: 0.99.114
 Authors@R: c(
     person("Bernd",    "Jagla",
            email   = "bernd.jagla@pasteur.fr",

@@ -45,7 +45,8 @@ extract_all_gates <- function(
     extend_val = 0,
     extend_to = -4000,
     correct_faulty_gate = 0,
-    use_transformed_coords = FALSE
+    use_transformed_coords = FALSE,
+    schema_version = NULL
 ) {
     gates_list <- list()
 
@@ -109,7 +110,8 @@ gates_for_population_samples <- function(gates_list, pop_uuid, pop_def,
             extend_val = extend_val,
             extend_to = extend_to,
             correct_faulty_gate = correct_faulty_gate,
-            use_transformed_coords = use_transformed_coords
+            use_transformed_coords = use_transformed_coords,
+            schema_version = schema_version
         )
 
         if (!is.null(gate_obj)) {
@@ -137,7 +139,8 @@ convert_flowjo_gate <- function(
     extend_val = 0,
     extend_to = -4000,
     correct_faulty_gate = 0,
-    use_transformed_coords = FALSE
+    use_transformed_coords = FALSE,
+    schema_version = NULL
 ) {
     gate_type <- gate_infer_type(gate, pop_type)
 
@@ -147,7 +150,8 @@ convert_flowjo_gate <- function(
     tryCatch(
         {
             gate_dispatch_type(gate_type, gate, pop_name, extend_val,
-                extend_to, correct_faulty_gate, use_transformed_coords)
+                extend_to, correct_faulty_gate, use_transformed_coords,
+                schema_version)
         },
         error = function(e) {
             warning(
@@ -196,35 +200,40 @@ gate_infer_type <- function(gate, pop_type) {
 #' @return flowCore gate object, or NULL for unsupported types
 #' @noRd
 gate_dispatch_type <- function(gate_type, gate, pop_name, extend_val,
-    extend_to, correct_faulty_gate, use_transformed_coords) {
+    extend_to, correct_faulty_gate, use_transformed_coords,
+    schema_version = NULL) {
     switch(gate_type,
         "RectangleGate" = ,
         "rectangle" = convert_rectangle_gate(
             gate, pop_name,
             extend_val, extend_to, correct_faulty_gate,
-            use_transformed_coords
+            use_transformed_coords, schema_version
         ),
         "PolygonGate" = ,
         "polygon" = convert_polygon_gate(
             gate, pop_name, extend_val,
-            extend_to, correct_faulty_gate, use_transformed_coords
+            extend_to, correct_faulty_gate, use_transformed_coords,
+            schema_version
         ),
         "EllipsoidGate" = ,
         "ellipse" = convert_ellipse_gate(
             gate, pop_name, extend_val,
-            extend_to, correct_faulty_gate, use_transformed_coords
+            extend_to, correct_faulty_gate, use_transformed_coords,
+            schema_version
         ),
         "RangeGate" = ,
         "range" = convert_range_gate(
             gate, pop_name, extend_val,
-            extend_to, correct_faulty_gate, use_transformed_coords
+            extend_to, correct_faulty_gate, use_transformed_coords,
+            schema_version
         ),
         "QuadrantGate" = ,
         "quad" = convert_quadrant_gate(
             gate, pop_name, extend_val,
-            extend_to, correct_faulty_gate, use_transformed_coords
+            extend_to, correct_faulty_gate, use_transformed_coords,
+            schema_version
         ),
-        "BooleanGate" = convert_boolean_gate(gate, pop_name),
+        "BooleanGate" = convert_boolean_gate(gate, pop_name, schema_version),
         {
             warning(
                 "Unsupported gate type: ", gate_type,
@@ -421,7 +430,8 @@ apply_extension <- function(coords, extend_val = 0, extend_to = -4000) {
 #' @importFrom flowCore rectangleGate
 convert_rectangle_gate <- function(
     gate, pop_name, extend_val, extend_to,
-    correct_faulty_gate = 0, use_transformed_coords = FALSE
+    correct_faulty_gate = 0, use_transformed_coords = FALSE,
+    schema_version = NULL
 ) {
     # browser() # nocov
     # Extract parameters
@@ -509,7 +519,8 @@ gate_rect_2d <- function(gate, pop_name, x_param, y_param, x_min, x_max,
 #' @importFrom flowCore polygonGate
 convert_polygon_gate <- function(
     gate, pop_name, extend_val, extend_to,
-    correct_faulty_gate = 0, use_transformed_coords = FALSE
+    correct_faulty_gate = 0, use_transformed_coords = FALSE,
+    schema_version = NULL
 ) {
     # Extract parameters
     x_param <- gate$xParameter %||%
@@ -603,7 +614,8 @@ gate_polygon_vertices <- function(gate, pop_name, extend_val, extend_to,
 #' @importFrom flowCore ellipsoidGate
 convert_ellipse_gate <- function(
     gate, pop_name, extend_val, extend_to,
-    correct_faulty_gate = 0, use_transformed_coords = FALSE
+    correct_faulty_gate = 0, use_transformed_coords = FALSE,
+    schema_version = NULL
 ) {
     # Extract parameters
     x_param <- gate$xAxis$parameterSpec$name %||% gate$xParameter
@@ -711,14 +723,18 @@ gate_ellipse_geometry <- function(gate, x_display, y_display, gate_resolution,
 #' @return 2x2 covariance matrix
 #' @noRd
 gate_ellipse_cov_display <- function(a_display, b_display, angle_rad) {
+    # Sigma = R diag(a^2, b^2) R^T: semi-axis a lies along (cos, sin) of the
+    # rotation angle, b perpendicular to it. (Before 0.99.114 a and b were
+    # swapped and the rotation reversed, which gave 11-20% too few events on
+    # FlowJo 11.3 workspaces.)
     cos_a <- cos(angle_rad)
     sin_a <- sin(angle_rad)
 
     matrix(c(
-        a_display^2 * sin_a^2 + b_display^2 * cos_a^2,
+        a_display^2 * cos_a^2 + b_display^2 * sin_a^2,
         (a_display^2 - b_display^2) * sin_a * cos_a,
         (a_display^2 - b_display^2) * sin_a * cos_a,
-        a_display^2 * cos_a^2 + b_display^2 * sin_a^2
+        a_display^2 * sin_a^2 + b_display^2 * cos_a^2
     ), nrow = 2, ncol = 2)
 }
 
@@ -752,7 +768,8 @@ gate_ellipse_axis_scale <- function(axis_transform, vector_length,
 #' @importFrom flowCore rectangleGate
 convert_range_gate <- function(
     gate, pop_name, extend_val, extend_to,
-    correct_faulty_gate = 0, use_transformed_coords = FALSE
+    correct_faulty_gate = 0, use_transformed_coords = FALSE,
+    schema_version = NULL
 ) {
     param <- gate_range_param(gate, pop_name)
     x_display <- gate_range_vertices(gate, pop_name)
@@ -844,7 +861,8 @@ gate_range_vertices <- function(gate, pop_name) {
 #' @importFrom flowCore quadGate
 convert_quadrant_gate <- function(
     gate, pop_name, extend_val, extend_to,
-    correct_faulty_gate = 0, use_transformed_coords = FALSE
+    correct_faulty_gate = 0, use_transformed_coords = FALSE,
+    schema_version = NULL
 ) {
     params <- gate_quadrant_params(gate, pop_name)
 
@@ -944,7 +962,7 @@ gate_quadrant_dividers <- function(gate) {
 #' @keywords internal
 #' @importFrom flowWorkspace booleanFilter
 #' @importFrom magrittr %>%
-convert_boolean_gate <- function(gate, pop_name) {
+convert_boolean_gate <- function(gate, pop_name, schema_version = NULL) {
     specification <- gate_boolean_spec(gate, pop_name)
     if (is.null(specification)) {
         return(NULL)

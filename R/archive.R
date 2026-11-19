@@ -158,6 +158,7 @@ archive_build_workspace <- function(workspace_path, results, main_json) {
         populations = main_json$populations,
         # Include all top-level JSON fields for completeness
         schemaVersion = main_json$schemaVersion,
+        schema_version = fj11_schema_version(main_json$schemaVersion),
         analysisUUID = main_json$analysisUUID,
         uri = main_json$uri,
         reports = main_json$reports,
@@ -215,6 +216,7 @@ read_flowjo11_workspace <- function(workspace_path) {
     main_json <- results$json[[main_json_name[1]]]
 
     workspace <- archive_build_workspace(workspace_path, results, main_json)
+    check_schema_version(workspace$schema_version)
 
     # Add class attribute for S3 methods
     class(workspace) <- "flowjo11_workspace"

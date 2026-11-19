@@ -40,7 +40,8 @@ NULL
 #  transforms.
 #' Transformations are extracted per channel/marker, not per gate.
 #' @keywords internal
-extract_transformations <- function(populationDefinitions, sample_uuids) {
+extract_transformations <- function(populationDefinitions, sample_uuids,
+    schema_version = NULL) {
     trans_list <- list()
 
     for (sample_uuid in sample_uuids) {

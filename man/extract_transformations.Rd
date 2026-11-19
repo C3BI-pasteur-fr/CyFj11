@@ -4,7 +4,11 @@
 \alias{extract_transformations}
 \title{Extract Transformations from FlowJo v11 Workspace}
 \usage{
-extract_transformations(populationDefinitions, sample_uuids)
+extract_transformations(
+  populationDefinitions,
+  sample_uuids,
+  schema_version = NULL
+)
 }
 \arguments{
 \item{populationDefinitions}{Population definitions from workspace}
@@ -20,7 +24,6 @@ Extracts transformation functions for each channel and sample
 \details{
 Extracts transformations from parameter specifications in gate definitions.
 Supports biexponential (Biex) transformations which are mapped to logicle
-transforms.
 Transformations are extracted per channel/marker, not per gate.
 }
 \keyword{internal}

@@ -624,7 +624,8 @@ tree_make_builder <- function(populations, populationDefinitions,
 #' @keywords internal
 build_gating_tree <- function(
     sample_uuid, populations,
-    populationDefinitions, root_uuid
+    populationDefinitions, root_uuid,
+    schema_version = NULL
 ) {
     # First, identify all logical gates before building the tree
     if (.pkgenv$verbose) message("Identifying logical gates...") # nocov
@@ -1559,7 +1560,7 @@ gs_set_pdata <- function(gs, sample_uuids, dataSources, keywords,
 #' @param actual_sample_count Number of samples (as in the caller)
 #' @noRd
 gs_add_gates <- function(gsList, sample_uuids, gating_trees, gates,
-    strip_comp_prefix, actual_sample_count) {
+    strip_comp_prefix, actual_sample_count, schema_version = NULL) {
     for (idx in seq_len(actual_sample_count)) {
         actual_sample_uuids <- sample_uuids[idx] %>% unlist()
         actual_gating_trees <- gating_trees[idx]
@@ -1570,7 +1571,8 @@ gs_add_gates <- function(gsList, sample_uuids, gating_trees, gates,
             gates = gates,
             sample_uuids = actual_sample_uuids,
             strip_comp_prefix = strip_comp_prefix,
-            verbose = .pkgenv$verbose
+            verbose = .pkgenv$verbose,
+            schema_version = schema_version
         ) # nocov
     }
 
@@ -1638,7 +1640,8 @@ create_gatingset_from_cytoset <- function(
     additional.keys,
     additional.sampleID,
     keyword.ignore.case,
-    strip_comp_prefix = TRUE
+    strip_comp_prefix = TRUE,
+    schema_version = NULL
 ) {
     actual_sample_count <- length(cytoset)
 
@@ -1666,7 +1669,7 @@ create_gatingset_from_cytoset <- function(
     if (!is.null(gates)) {
         gs_add_gates(
             merged$gsList, sample_uuids, gating_trees, gates,
-            strip_comp_prefix, actual_sample_count
+            strip_comp_prefix, actual_sample_count, schema_version
         )
     }
     merged$gsList

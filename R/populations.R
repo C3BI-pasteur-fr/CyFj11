@@ -155,7 +155,7 @@ pop_warn_unresolved <- function(deferred, gh) {
 #' @importFrom flowWorkspace gs_pop_add
 add_populations_to_gatingset <- function(
     gs, gating_trees, gates, sample_uuids,
-    strip_comp_prefix = TRUE, verbose = FALSE
+    strip_comp_prefix = TRUE, verbose = FALSE, schema_version = NULL
 ) {
     for (i in seq_along(sample_uuids)) {
         sample_uuid <- sample_uuids[i]

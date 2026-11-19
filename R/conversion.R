@@ -176,7 +176,12 @@ fj11_to_gatingset <- function(
     prep <- fj11_prepare_data(fj11_workspace, group_name, subset, path,
         cytoset, stop_on_multiple, backend_dir, backend, keywords, ...)
     sample_uuids <- prep$sample_uuids
-    cytoset <- prep$cytoset
+    # FlowJo >= 11.3 stores the values of algorithm-derived parameters (event
+    # quality filter, FlowSOM, t-SNE, UMAP) as CSV files inside the .flowjo
+    # archive; gates on them need these columns in the flowFrames.
+    cytoset <- append_derived_parameters(
+        prep$cytoset, fj11_workspace$path, sample_uuids
+    )
 
     gsList <- fj11_build_gatingset(
         fj11_workspace, sample_uuids, cytoset, include_gates, compensation,
@@ -540,12 +545,13 @@ fj11_build_gatingset <- function(fj11_workspace, sample_uuids, cytoset,
     populationDefinitions <- fj11_workspace$populationDefinitions
     populations <- fj11_workspace$populations
     platforms <- fj11_workspace$platforms
+    schema_version <- fj11_schema_version(fj11_workspace)
 
     # Step 5: Build gating hierarchy ----
     if (.pkgenv$verbose) message("\nBuilding gating hierarchy...\n")
 
     gating_trees <- fj11_build_trees(
-        populations, populationDefinitions, sample_uuids
+        populations, populationDefinitions, sample_uuids, schema_version
     )
 
     # Steps 6-8: extract transformations, gates, compensation
@@ -561,7 +567,7 @@ fj11_build_gatingset <- function(fj11_workspace, sample_uuids, cytoset,
         comps$comp_list, transform, comps$trans_list, sample_uuids,
         dataSources, keywords, additional.keys,
         additional.sampleID, keyword.ignore.case,
-        strip_comp_prefix
+        strip_comp_prefix, schema_version
     )
 
     fj11_execute_gating(gsList, execute, include_gates)
@@ -596,12 +602,14 @@ fj11_extract_components <- function(fj11_workspace, sample_uuids,
     populationDefinitions <- fj11_workspace$populationDefinitions
     dataSources <- fj11_workspace$dataSources
     platforms <- fj11_workspace$platforms
+    schema_version <- fj11_schema_version(fj11_workspace)
 
     # Step 8: Extract transformations ----
     if (.pkgenv$verbose) message("\nExtracting transformations...\n")
     trans_list <- extract_transformations(
         populationDefinitions = populationDefinitions,
-        sample_uuids = sample_uuids
+        sample_uuids = sample_uuids,
+        schema_version = schema_version
     )
 
     # Step 6: Extract gates ----
@@ -610,7 +618,7 @@ fj11_extract_components <- function(fj11_workspace, sample_uuids,
         fj11_extract_gates(
             populationDefinitions, sample_uuids,
             channel.ignore.case, extend_val, extend_to,
-            correct_faulty_gate, use_transformed_coords
+            correct_faulty_gate, use_transformed_coords, schema_version
         )
     }
 
@@ -622,7 +630,8 @@ fj11_extract_components <- function(fj11_workspace, sample_uuids,
         dataSources = dataSources,
         sample_uuids = sample_uuids,
         custom_compensation = compensation,
-        platforms = platforms
+        platforms = platforms,
+        schema_version = schema_version
     )
 
     list(
@@ -650,7 +659,8 @@ fj11_extract_components <- function(fj11_workspace, sample_uuids,
 fj11_extract_gates <- function(populationDefinitions, sample_uuids,
                                 channel.ignore.case, extend_val,
                                 extend_to, correct_faulty_gate,
-                                use_transformed_coords) {
+                                use_transformed_coords,
+                                schema_version = NULL) {
     extract_all_gates(
         populationDefinitions = populationDefinitions,
         sample_uuids = sample_uuids,
@@ -658,7 +668,8 @@ fj11_extract_gates <- function(populationDefinitions, sample_uuids,
         extend_val = extend_val,
         extend_to = extend_to,
         correct_faulty_gate = correct_faulty_gate,
-        use_transformed_coords = use_transformed_coords
+        use_transformed_coords = use_transformed_coords,
+        schema_version = schema_version
     )
 }
 
@@ -700,7 +711,7 @@ fj11_execute_gating <- function(gsList, execute, include_gates) {
 #' @return Named list of gating trees from build_gating_tree
 #' @keywords internal
 fj11_build_trees <- function(populations, populationDefinitions,
-                            sample_uuids) {
+                            sample_uuids, schema_version = NULL) {
     root_pop_uuid <- find_root_population(
         populations, populationDefinitions, sample_uuids[1]
     )
@@ -709,7 +720,8 @@ fj11_build_trees <- function(populations, populationDefinitions,
             sample_uuid = sample_uuid,
             populations = populations,
             populationDefinitions = populationDefinitions,
-            root_uuid = root_pop_uuid
+            root_uuid = root_pop_uuid,
+            schema_version = schema_version
         )
     })
 }
@@ -740,7 +752,8 @@ fj11_create_gatingsets <- function(cytoset, gating_trees,
                                     additional.keys,
                                     additional.sampleID,
                                     keyword.ignore.case,
-                                    strip_comp_prefix) {
+                                    strip_comp_prefix,
+                                    schema_version = NULL) {
     create_gatingset_from_cytoset(
         cytoset = cytoset,
         gating_trees = gating_trees,
@@ -753,6 +766,7 @@ fj11_create_gatingsets <- function(cytoset, gating_trees,
         additional.keys = additional.keys,
         additional.sampleID = additional.sampleID,
         keyword.ignore.case = keyword.ignore.case,
-        strip_comp_prefix = strip_comp_prefix
+        strip_comp_prefix = strip_comp_prefix,
+        schema_version = schema_version
     )
 }

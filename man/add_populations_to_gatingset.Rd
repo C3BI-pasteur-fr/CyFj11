@@ -10,7 +10,8 @@ add_populations_to_gatingset(
     gates,
     sample_uuids,
     strip_comp_prefix = TRUE,
-    verbose = FALSE
+    verbose = FALSE,
+    schema_version = NULL
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ add_populations_to_gatingset(
 when matching to GatingSet parameters? Default TRUE.}
 
 \item{verbose}{Logical. Print verbose messages? Default FALSE.}
+
+\item{schema_version}{FlowJo analysis schema version (a \code{numeric_version}, or
+\code{NULL} if unknown), see \code{\link{fj11_schema_version}}.}
 }
 \description{
 Adds population nodes and gates to GatingSet based on gating trees

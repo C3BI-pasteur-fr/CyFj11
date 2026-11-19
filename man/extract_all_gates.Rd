@@ -5,13 +5,14 @@
 \title{Extract All Gates from FlowJo v11 Workspace}
 \usage{
 extract_all_gates(
-    populationDefinitions,
-    sample_uuids,
-    channel.ignore.case = FALSE,
-    extend_val = 0,
-    extend_to = -4000,
-    correct_faulty_gate = 0,
-    use_transformed_coords = FALSE
+  populationDefinitions,
+  sample_uuids,
+  channel.ignore.case = FALSE,
+  extend_val = 0,
+  extend_to = -4000,
+  correct_faulty_gate = 0,
+  use_transformed_coords = FALSE,
+  schema_version = NULL
 )
 }
 \arguments{

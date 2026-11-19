@@ -99,7 +99,8 @@ comp_platform_or_legacy <- function(sample_uuid, custom_comp,
 extract_compensation <- function(dataSources,
     sample_uuids,
     custom_compensation = NULL,
-    platforms = NULL) {
+    platforms = NULL,
+    schema_version = NULL) {
     # First, build a map of sample UUID to compensation matrix from platforms
     sample_comp_map <- NULL
     if (!is.null(platforms) && !is.null(platforms$spilloverMatrix)) {

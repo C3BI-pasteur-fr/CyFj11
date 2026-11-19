@@ -5,14 +5,15 @@
 \title{Convert FlowJo Gate to flowCore Gate Object}
 \usage{
 convert_flowjo_gate(
-    gate,
-    pop_name,
-    pop_type,
-    channel.ignore.case = FALSE,
-    extend_val = 0,
-    extend_to = -4000,
-    correct_faulty_gate = 0,
-    use_transformed_coords = FALSE
+  gate,
+  pop_name,
+  pop_type,
+  channel.ignore.case = FALSE,
+  extend_val = 0,
+  extend_to = -4000,
+  correct_faulty_gate = 0,
+  use_transformed_coords = FALSE,
+  schema_version = NULL
 )
 }
 \description{

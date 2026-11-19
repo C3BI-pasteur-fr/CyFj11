@@ -5,12 +5,13 @@
 \title{Convert Ellipse Gate}
 \usage{
 convert_ellipse_gate(
-    gate,
-    pop_name,
-    extend_val,
-    extend_to,
-    correct_faulty_gate = 0,
-    use_transformed_coords = FALSE
+  gate,
+  pop_name,
+  extend_val,
+  extend_to,
+  correct_faulty_gate = 0,
+  use_transformed_coords = FALSE,
+  schema_version = NULL
 )
 }
 \description{

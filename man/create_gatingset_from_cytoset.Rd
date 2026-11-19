@@ -16,13 +16,17 @@ create_gatingset_from_cytoset(
     additional.keys,
     additional.sampleID,
     keyword.ignore.case,
-    strip_comp_prefix = TRUE
+    strip_comp_prefix = TRUE,
+    schema_version = NULL
 )
 }
 \arguments{
 \item{strip_comp_prefix}{Logical. Strip "Comp-" prefix from gate parameter names
 when adding populations? Default TRUE. Set to FALSE if compensation has already
 been applied and gate names should match the compensated parameter names.}
+
+\item{schema_version}{FlowJo analysis schema version (a \code{numeric_version}, or
+\code{NULL} if unknown), see \code{\link{fj11_schema_version}}.}
 }
 \description{
 Create GatingSet from Components - Transform First Approach

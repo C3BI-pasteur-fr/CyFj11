@@ -4,7 +4,13 @@
 \alias{build_gating_tree}
 \title{Build Gating Tree for given Sample}
 \usage{
-build_gating_tree(sample_uuid, populations, populationDefinitions, root_uuid)
+build_gating_tree(
+  sample_uuid,
+  populations,
+  populationDefinitions,
+  root_uuid,
+  schema_version = NULL
+)
 }
 \description{
 Build Gating Tree for given Sample

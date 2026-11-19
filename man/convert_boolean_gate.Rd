@@ -4,7 +4,7 @@
 \alias{convert_boolean_gate}
 \title{Convert Boolean Gate}
 \usage{
-convert_boolean_gate(gate, pop_name)
+convert_boolean_gate(gate, pop_name, schema_version = NULL)
 }
 \description{
 Convert Boolean Gate
