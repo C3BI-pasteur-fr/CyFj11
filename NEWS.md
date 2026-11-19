@@ -12,9 +12,11 @@
   specific behaviour can be added where needed. `read_flowjo11_workspace()`
   warns when a workspace uses a schema version newer than those tested
   (3.0.0 and 4.0.0).
-* Fixed ellipse gates: the covariance matrix swapped the semi-axes and
-  reversed the rotation, so ellipse gates had too few events (for example
-  113,018 instead of about 140,900 on the 11.3 reference workspace).
+* Fixed ellipse gates for schema 4.0.0 (FlowJo 11.3) and newer: the
+  covariance matrix swapped the semi-axes and reversed the rotation, so ellipse
+  gates had too few events (113,018 instead of about 140,900 on the 11.3
+  reference workspace). Workspaces with an older or unknown schema version keep
+  the previous behaviour so that earlier results stay reproducible.
 * Known issue: `rotationAngle` of ellipse gates in the older bundled
   `test.data.flowjo` (gateResolution 1024) still gives 4,671 events instead of
   FlowJo's 4,523.

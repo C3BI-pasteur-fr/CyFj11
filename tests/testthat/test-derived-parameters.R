@@ -54,6 +54,7 @@ test_that("FlowJo 11.3 reference workspace reproduces FlowJo counts", {
   fcs_of <- vapply(ws$dataSources, function(d) basename(d$definition$uri), "")
   for (g in gsl) {
     cnt <- as.data.frame(flowWorkspace::gs_pop_get_count_fast(g))
+    expect_equal(nrow(cnt), 14L)  # every gate must have been converted
     ds <- names(fcs_of)[fcs_of == flowWorkspace::sampleNames(g)]
     r <- ref[ref$ds == ds, ]
     for (k in seq_len(nrow(cnt))) {

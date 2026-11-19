@@ -63,7 +63,7 @@ extract_all_gates <- function(
         gates_list <- gates_for_population_samples(
             gates_list, pop_uuid, pop_def, sample_uuids,
             channel.ignore.case, extend_val, extend_to,
-            correct_faulty_gate, use_transformed_coords
+            correct_faulty_gate, use_transformed_coords, schema_version
         )
     }
 
@@ -81,11 +81,12 @@ extract_all_gates <- function(
 #' @param extend_to Passed to convert_flowjo_gate
 #' @param correct_faulty_gate Passed to convert_flowjo_gate
 #' @param use_transformed_coords Passed to convert_flowjo_gate
+#' @param schema_version Passed to convert_flowjo_gate
 #' @return Updated gates list
 #' @noRd
 gates_for_population_samples <- function(gates_list, pop_uuid, pop_def,
     sample_uuids, channel.ignore.case, extend_val, extend_to,
-    correct_faulty_gate, use_transformed_coords) {
+    correct_faulty_gate, use_transformed_coords, schema_version = NULL) {
     gate_def <- pop_def$definition$gateDefinition
     desync_table <- pop_def$definition$desyncTable
 
@@ -633,7 +634,7 @@ convert_ellipse_gate <- function(
 
     ell <- gate_ellipse_geometry(
         gate, x_display, y_display, gate_resolution,
-        correct_faulty_gate, use_transformed_coords
+        correct_faulty_gate, use_transformed_coords, schema_version
     )
 
     # Set names for covariance matrix
@@ -667,10 +668,11 @@ convert_ellipse_gate <- function(
 #' @param gate_resolution Gate resolution
 #' @param correct_faulty_gate Fallback maxRange value if maxRange=0
 #' @param use_transformed_coords Passed to display_to_raw
+#' @param schema_version Analysis schema version; selects the ellipse convention
 #' @return list(cov_raw, center_x_raw, center_y_raw)
 #' @noRd
 gate_ellipse_geometry <- function(gate, x_display, y_display, gate_resolution,
-    correct_faulty_gate, use_transformed_coords) {
+    correct_faulty_gate, use_transformed_coords, schema_version = NULL) {
     # Calculate ellipse parameters in DISPLAY space first
     center_x_display <- mean(x_display)
     center_y_display <- mean(y_display)
@@ -681,7 +683,9 @@ gate_ellipse_geometry <- function(gate, x_display, y_display, gate_resolution,
     # Get rotation angle. FlowJo stores rotationAngle in degrees.
     angle <- gate$rotationAngle %||% 0
     angle_rad <- angle * pi / 180
-    cov_display <- gate_ellipse_cov_display(a_display, b_display, angle_rad)
+    cov_display <- gate_ellipse_cov_display(
+        a_display, b_display, angle_rad, schema_version
+    )
 
     # Transform center to raw data space
     center_x_raw <- display_to_raw(
@@ -717,25 +721,34 @@ gate_ellipse_geometry <- function(gate, x_display, y_display, gate_resolution,
 
 #' Build the ellipse covariance matrix in display space
 #'
+#' From analysis schema 4.0.0 (FlowJo 11.3) on, the semi-axis \code{a} lies
+#' along the direction (cos, sin) of the rotation angle and \code{b}
+#' perpendicular to it, i.e. Sigma = R diag(a^2, b^2) R^T. This reproduces
+#' FlowJo's own counts. Workspaces with an older or unknown schema version keep
+#' the convention used by CyFj11 up to 0.99.113 (semi-axes swapped, rotation
+#' reversed) so that earlier results stay reproducible.
+#'
 #' @param a_display Semi-major axis length
 #' @param b_display Semi-minor axis length
 #' @param angle_rad Rotation angle in radians
+#' @param schema_version Analysis schema version (\code{numeric_version} or NULL)
 #' @return 2x2 covariance matrix
 #' @noRd
-gate_ellipse_cov_display <- function(a_display, b_display, angle_rad) {
-    # Sigma = R diag(a^2, b^2) R^T: semi-axis a lies along (cos, sin) of the
-    # rotation angle, b perpendicular to it. (Before 0.99.114 a and b were
-    # swapped and the rotation reversed, which gave 11-20% too few events on
-    # FlowJo 11.3 workspaces.)
+gate_ellipse_cov_display <- function(a_display, b_display, angle_rad,
+    schema_version = NULL) {
     cos_a <- cos(angle_rad)
     sin_a <- sin(angle_rad)
 
-    matrix(c(
-        a_display^2 * cos_a^2 + b_display^2 * sin_a^2,
-        (a_display^2 - b_display^2) * sin_a * cos_a,
-        (a_display^2 - b_display^2) * sin_a * cos_a,
-        a_display^2 * sin_a^2 + b_display^2 * cos_a^2
-    ), nrow = 2, ncol = 2)
+    if (schema_at_least(schema_version, "4.0.0")) {
+        diag_x <- a_display^2 * cos_a^2 + b_display^2 * sin_a^2
+        diag_y <- a_display^2 * sin_a^2 + b_display^2 * cos_a^2
+    } else {
+        diag_x <- a_display^2 * sin_a^2 + b_display^2 * cos_a^2
+        diag_y <- a_display^2 * cos_a^2 + b_display^2 * sin_a^2
+    }
+    off <- (a_display^2 - b_display^2) * sin_a * cos_a
+
+    matrix(c(diag_x, off, off, diag_y), nrow = 2, ncol = 2)
 }
 
 #' Per-axis display-to-data scale factor for ellipse covariance
